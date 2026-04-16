@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DK Vol.11 Stock Realtime</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,60 +14,153 @@
         
         body {
             font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: #f5f1ed;
             color: #333;
-            padding: 20px;
+            padding: 0;
             min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #8B3A3A 0%, #A50000 100%);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 15px;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #8B3A3A;
+            font-size: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 5px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        
+        .header p {
+            font-size: 0.95em;
+            opacity: 0.95;
+            color: #FFD700;
+        }
+        
+        .realtime-badge {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            border: 1px solid rgba(255,255,255,0.4);
+            color: #00FF88;
+            font-weight: 600;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 20px;
         }
         
-        .header {
-            text-align: center;
+        .e-catalog-link {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
             margin-bottom: 30px;
-            color: white;
-        }
-        
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 5px;
-            font-weight: 700;
-        }
-        
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-        
-        .status {
             display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 20px;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .e-catalog-link:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        
+        .e-catalog-icon {
+            font-size: 2em;
+        }
+        
+        .e-catalog-text h3 {
+            color: #8B3A3A;
+            font-size: 1.1em;
+            margin-bottom: 3px;
+        }
+        
+        .e-catalog-text p {
+            color: #999;
+            font-size: 0.9em;
+        }
+        
+        .e-catalog-arrow {
+            margin-left: auto;
+            color: #8B3A3A;
+            font-size: 1.5em;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
         }
         
-        .status-item {
-            background: rgba(255,255,255,0.1);
-            padding: 10px 15px;
-            border-radius: 8px;
-            color: white;
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-family: 'Sarabun', sans-serif;
+            transition: all 0.3s ease;
             font-size: 0.95em;
-            border-left: 3px solid #00d4ff;
         }
         
-        .status-item.updated {
-            border-left-color: #00ff88;
+        .filter-btn.active {
+            background: #8B3A3A;
+            color: white;
+            border-color: #8B3A3A;
+        }
+        
+        .filter-btn:hover {
+            border-color: #8B3A3A;
+        }
+        
+        .section-title {
+            color: #8B3A3A;
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #8B3A3A;
         }
         
         .table-wrapper {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border-radius: 8px;
             overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
         
         table {
@@ -75,74 +169,57 @@
         }
         
         thead {
-            background: linear-gradient(135deg, #8B0000 0%, #A50000 100%);
+            background: #8B3A3A;
             color: white;
         }
         
         th {
-            padding: 18px;
+            padding: 15px;
             text-align: left;
             font-weight: 600;
-            font-size: 1em;
-            letter-spacing: 0.5px;
+            font-size: 0.95em;
         }
         
         td {
-            padding: 16px 18px;
+            padding: 15px;
             border-bottom: 1px solid #f0f0f0;
         }
         
-        tbody tr {
-            transition: background-color 0.2s ease;
-        }
-        
         tbody tr:hover {
-            background-color: #f9f9f9;
-        }
-        
-        tbody tr:last-child td {
-            border-bottom: none;
+            background: #fafafa;
         }
         
         .sku-cell {
             font-weight: 600;
-            color: #1a1a2e;
-            font-size: 1.05em;
+            color: #8B3A3A;
+            font-size: 1em;
         }
         
         .yard-cell {
             text-align: right;
-            color: #d6c8b9;
+            color: #333;
             font-weight: 600;
         }
         
         .roll-cell {
             text-align: center;
-            background: #f5f5f5;
-            border-radius: 6px;
-            color: #555;
-            font-weight: 600;
-        }
-        
-        .date-cell {
-            color: #999;
-            font-size: 0.9em;
+            color: #666;
         }
         
         .zero-stock {
-            background-color: #ffe0e0;
-            color: #c00;
+            background: #fff5f5;
+            opacity: 0.7;
         }
         
         .loading {
             text-align: center;
-            padding: 40px;
-            color: white;
+            padding: 60px 20px;
+            color: #8B3A3A;
         }
         
         .spinner {
-            border: 4px solid rgba(255,255,255,0.2);
-            border-top: 4px solid #00d4ff;
+            border: 4px solid #f0f0f0;
+            border-top: 4px solid #8B3A3A;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -155,183 +232,197 @@
         }
         
         .error {
-            background: #fee;
+            background: #fff5f5;
             color: #c00;
             padding: 20px;
             border-radius: 8px;
             border-left: 4px solid #c00;
-        }
-        
-        .footer {
             text-align: center;
-            margin-top: 20px;
-            color: rgba(255,255,255,0.6);
-            font-size: 0.9em;
         }
         
-        .price-info {
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-box {
+            background: white;
+            padding: 20px;
             border-radius: 8px;
-            margin-bottom: 20px;
-            color: white;
-            text-align: center;
-            font-weight: 600;
+            border-left: 4px solid #8B3A3A;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .summary-label {
+            color: #999;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .summary-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #8B3A3A;
         }
         
         @media (max-width: 768px) {
             .header h1 {
-                font-size: 1.8em;
+                font-size: 1.5em;
+            }
+            
+            .filters {
+                gap: 8px;
+            }
+            
+            .filter-btn {
+                padding: 8px 15px;
+                font-size: 0.9em;
             }
             
             th, td {
                 padding: 12px;
                 font-size: 0.9em;
             }
-            
-            .status {
-                flex-direction: column;
-                gap: 10px;
-            }
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <div class="realtime-badge">🟢 REALTIME</div>
+        <h1>DK Vol.11 — Special</h1>
+        <p>ผ้าบาน · สติ่อกพร้อมส่ง</p>
+    </div>
+    
     <div class="container">
-        <div class="header">
-            <h1>📦 DK Vol.11 Stock Realtime</h1>
-            <p>บริษัท ดาริกา จำกัด | สต็อกผ้า ปัจจุบัน</p>
+        <a href="#" class="e-catalog-link">
+            <div class="e-catalog-icon">📖</div>
+            <div class="e-catalog-text">
+                <h3>E-Catalog DK Vol.11</h3>
+                <p>ดูรายวางค่ารบทกรรมศิลป์</p>
+            </div>
+            <div class="e-catalog-arrow">›</div>
+        </a>
+        
+        <div class="section-title">สต็อกกงเหลือ</div>
+        
+        <div class="summary" id="summary">
+            <div class="summary-box">
+                <div class="summary-label">📊 SKU ทั้งหมด</div>
+                <div class="summary-value" id="sku-count">-</div>
+            </div>
+            <div class="summary-box">
+                <div class="summary-label">📏 รวมยาร์ด</div>
+                <div class="summary-value" id="total-yard">-</div>
+            </div>
+            <div class="summary-box">
+                <div class="summary-label">🎯 มีสต็อก</div>
+                <div class="summary-value" id="in-stock">-</div>
+            </div>
         </div>
         
-        <div class="price-info">
-            💰 ราคา 99 บาท/หลา | 📞 สั่งซื้อผ่าน LINE OA
-        </div>
-        
-        <div class="status">
-            <div class="status-item">
-                📊 SKU: <span id="sku-count">-</span>
-            </div>
-            <div class="status-item">
-                📏 รวมยาร์ด: <span id="total-yard">-</span>
-            </div>
-            <div class="status-item updated">
-                ⏱️ ล่าสุด: <span id="last-update">-</span>
-            </div>
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterStock('all')">ทั้งหมด</button>
+            <button class="filter-btn" onclick="filterStock('available')">มีสต็อก ✓</button>
+            <button class="filter-btn" onclick="filterStock('low')">ไม่มีสต็อก ⚠</button>
+            <button class="filter-btn" onclick="filterStock('zero')">หมดแล้ว ✕</button>
         </div>
         
         <div class="table-wrapper">
             <div id="loading" class="loading">
                 <div class="spinner"></div>
-                <p>กำลังโหลดสต็อก...</p>
+                <p>กำลังโหลดสต็อก Realtime...</p>
             </div>
             <div id="error" class="error" style="display:none;"></div>
             <table id="stock-table" style="display:none;">
                 <thead>
                     <tr>
-                        <th style="width: 20%;">SKU</th>
-                        <th style="width: 25%;">Collection</th>
-                        <th style="width: 25%; text-align: right;">ยาร์ด</th>
-                        <th style="width: 15%; text-align: center;">Roll</th>
-                        <th style="width: 15%;">Last Update</th>
+                        <th>SKU</th>
+                        <th>Collection</th>
+                        <th style="text-align: right;">ยาร์ด</th>
+                        <th style="text-align: center;">Roll</th>
+                        <th>Last Update</th>
                     </tr>
                 </thead>
                 <tbody id="stock-body">
                 </tbody>
             </table>
         </div>
-        
-        <div class="footer">
-            🔄 หมายเหตุ: สต็อกอัปเดตอัตโนมัติจาก Mirror Sheet
-        </div>
     </div>
 
     <script>
+        let allData = [];
+        let currentFilter = 'all';
+        
+        // Google Visualization API
+        google.charts.load('current', {'packages':['corechart', 'table']});
+        
         // Google Sheet Configuration
         const SHEET_ID = '1yZFro_wolqOYbojUHrVoKzirmcusMQgZJj8PdgaOglU';
         const SHEET_NAME = 'DK_VOL11';
-        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
-
-        // Fetch stock data
-        async function fetchStock() {
-            try {
-                const response = await fetch(CSV_URL);
-                if (!response.ok) throw new Error('Failed to fetch stock');
+        
+        function fetchStock() {
+            const query = new google.visualization.Query(
+                `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`
+            );
+            
+            query.setQuery('select A, B, C, D, E');
+            query.send(function(response) {
+                if (response.isError()) {
+                    showError('❌ ไม่สามารถโหลดสต็อก: ' + response.getMessage());
+                    return;
+                }
                 
-                const csv = await response.text();
-                const rows = csv.trim().split('\n');
+                const data = response.getDataTable();
+                const rows = data.getNumberOfRows();
                 
-                // Parse header
-                const headers = rows[0].split(',').map(h => h.replace(/"/g, '').trim());
-                
-                // Find column indices
-                const skuIdx = headers.findIndex(h => h.toLowerCase() === 'sku');
-                const collectionIdx = headers.findIndex(h => h.toLowerCase() === 'collection');
-                const yardIdx = headers.findIndex(h => h.toLowerCase() === 'totalfullrollyard');
-                const rollIdx = headers.findIndex(h => h.toLowerCase() === 'rollcount');
-                const updateIdx = headers.findIndex(h => h.toLowerCase() === 'lastupdate');
-                
-                if (skuIdx === -1) throw new Error('SKU column not found');
-                
-                // Parse data rows
-                const data = [];
+                allData = [];
                 let totalYard = 0;
+                let inStock = 0;
                 let latestDate = '';
                 
-                for (let i = 1; i < rows.length; i++) {
-                    if (!rows[i].trim()) continue;
-                    
-                    // Simple CSV parse (handle quoted fields)
-                    const cells = [];
-                    let current = '';
-                    let inQuotes = false;
-                    
-                    for (let j = 0; j < rows[i].length; j++) {
-                        const char = rows[i][j];
-                        if (char === '"') {
-                            inQuotes = !inQuotes;
-                        } else if (char === ',' && !inQuotes) {
-                            cells.push(current.trim());
-                            current = '';
-                        } else {
-                            current += char;
-                        }
-                    }
-                    cells.push(current.trim());
-                    
-                    const sku = cells[skuIdx]?.replace(/"/g, '') || '';
-                    const collection = cells[collectionIdx]?.replace(/"/g, '') || '';
-                    const yard = parseFloat(cells[yardIdx]?.replace(/"/g, '') || 0) || 0;
-                    const roll = parseInt(cells[rollIdx]?.replace(/"/g, '') || 0) || 0;
-                    const updateDate = cells[updateIdx]?.replace(/"/g, '') || '';
+                for (let i = 0; i < rows; i++) {
+                    const sku = data.getValue(i, 0) || '';
+                    const collection = data.getValue(i, 1) || '';
+                    const yard = parseFloat(data.getValue(i, 2)) || 0;
+                    const roll = parseInt(data.getValue(i, 3)) || 0;
+                    const updateDate = data.getValue(i, 4) || '';
                     
                     if (sku) {
-                        data.push({ sku, collection, yard, roll, updateDate });
+                        allData.push({ sku, collection, yard, roll, updateDate });
                         totalYard += yard;
+                        if (yard > 0) inStock++;
                         if (!latestDate || new Date(updateDate) > new Date(latestDate)) {
                             latestDate = updateDate;
                         }
                     }
                 }
                 
-                // Render table
-                renderTable(data, totalYard, latestDate);
+                // Render table with current filter
+                renderTable();
                 
-                // Update status
-                document.getElementById('sku-count').textContent = data.length;
+                // Update summary
+                document.getElementById('sku-count').textContent = allData.length;
                 document.getElementById('total-yard').textContent = totalYard.toFixed(2);
-                document.getElementById('last-update').textContent = latestDate || '-';
-                
-            } catch (error) {
-                console.error('Stock fetch error:', error);
-                showError(`❌ ไม่สามารถโหลดสต็อก: ${error.message}`);
-            }
+                document.getElementById('in-stock').textContent = inStock;
+            });
         }
         
-        function renderTable(data, totalYard, latestDate) {
+        function renderTable() {
             const tbody = document.getElementById('stock-body');
             tbody.innerHTML = '';
             
-            data.forEach(item => {
+            let filtered = allData;
+            if (currentFilter === 'available') {
+                filtered = allData.filter(item => item.yard > 0);
+            } else if (currentFilter === 'low') {
+                filtered = allData.filter(item => item.yard === 0 && item.roll > 0);
+            } else if (currentFilter === 'zero') {
+                filtered = allData.filter(item => item.yard === 0 && item.roll === 0);
+            }
+            
+            filtered.forEach(item => {
                 const row = document.createElement('tr');
                 if (item.yard === 0) row.classList.add('zero-stock');
                 
@@ -340,7 +431,7 @@
                     <td>${item.collection}</td>
                     <td class="yard-cell">${item.yard.toFixed(2)} หลา</td>
                     <td class="roll-cell">${item.roll}</td>
-                    <td class="date-cell">${item.updateDate}</td>
+                    <td>${item.updateDate}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -350,6 +441,18 @@
             document.getElementById('stock-table').style.display = 'table';
         }
         
+        function filterStock(filter) {
+            currentFilter = filter;
+            
+            // Update button styles
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            renderTable();
+        }
+        
         function showError(message) {
             document.getElementById('loading').style.display = 'none';
             const errorDiv = document.getElementById('error');
@@ -357,8 +460,8 @@
             errorDiv.style.display = 'block';
         }
         
-        // Initial load
-        fetchStock();
+        // Initial load when Google Charts is ready
+        google.charts.setOnLoadCallback(fetchStock);
         
         // Refresh every 5 minutes
         setInterval(fetchStock, 5 * 60 * 1000);
