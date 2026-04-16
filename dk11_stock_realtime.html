@@ -372,178 +372,25 @@ function render(){
 
 // ── LOAD DATA (gviz JSON — no CORS issues) ──
 function loadData(manual){
-  const icon=document.getElementById('rIcon');
-  if(icon)icon.classList.add('spin');
+  const icon=document.getElementById('rIcon'); if(icon)icon.classList.add('spin');
   document.getElementById('errWrap').style.display='none';
-
-  const url=SHEET_URL+'&_='+Date.now();
-  // Use script tag injection for JSONP-style — most reliable
-  const cb='__gviz_'+Date.now();
-  window[cb]=function(json){
-    try{
-      const t=json.table;
-      const cols=t.cols.map(function(c){return c.label.toLowerCase().replace(/\s+/g,'');});
-      const iSku=cols.indexOf('sku'); 
-      const iStk=cols.indexOf('totalfullrollyard');
-      const iSkuFb=iSku<0?0:iSku;
-      const iStkFb=iStk<0?2:iStk;
-      rows=(t.rows||[]).map(function(r){
-        const v=r.c||[];
-        return{
-          sku:((v[iSkuFb]&&v[iSkuFb].v)||'').toString().trim(),
-          stock:parseFloat((v[iStkFb]&&v[iStkFb].v)||0)||0,
-        };
-      }).filter(function(p){return p.sku;});
+  fetch('https://script.google.com/macros/s/AKfycbzQKiPCglnecqxBMcavf-R_Vjun7NykAWi969ZpzWS3uy4idrUrSTZMzcFt2-0356OnnA/exec?tab=DK_VOL11&_='+Date.now())
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.ok) throw new Error(d.error||'no data');
+      rows=d.rows||[];
       document.getElementById('loader').style.display='none';
       render();
-    }catch(e){showErr();}
-    delete window[cb];
-    const el=document.getElementById('__gs_'+cb);
-    if(el)el.parentNode.removeChild(el);
-    if(icon)icon.classList.remove('spin');
-  };
-
-  const script=document.createElement('script');
-  script.id='__gs_'+cb;
-  script.onerror=function(){showErr();if(icon)icon.classList.remove('spin');delete window[cb];};
-  script.src='https://docs.google.com/spreadsheets/d/1yZFro_wolqOYbojUHrVoKzirmcusMQgZJj8PdgaOglU/gviz/tq?tqx=out:json&sheet=DK_VOL11&callback='+cb+'&_='+Date.now();
-  document.head.appendChild(script);
+    })
+    .catch(function(e){
+      console.error('load error:',e);
+      showErr();
+    })
+    .finally(function(){if(icon)icon.classList.remove('spin');});
 }
 
-function showErr(){
-  document.getElementById('loader').style.display='none';
-  document.getElementById('errWrap').style.display='block';
-}
+function showErr(){document.getElementById('loader').style.display='none';document.getElementById('errWrap').style.display='block';}
 
-function setFilter(f,el){
-  curFilter=f;
-  document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');});
-  el.classList.add('on'); render();
-}
-
-// ── CART ──
-function addToCart(sku){
-  cart[sku]=(cart[sku]||0)+50;
-  updateCartUI();
-  const b=document.getElementById('ab_'+sku.replace(/[\s\/]/g,'_'));
-  if(b){b.textContent='✓';b.classList.add('added');}
-}
-function chgQty(sku,d){
-  const n=Math.max(0,(cart[sku]||0)+d);
-  if(n===0)delete cart[sku]; else cart[sku]=n;
-  renderCart(); updCnt();
-}
-function setQty(sku,v){
-  const n=parseInt(v)||0;
-  if(n<=0)delete cart[sku]; else cart[sku]=n;
-  renderCart(); updCnt();
-}
-function remCart(sku){
-  delete cart[sku]; renderCart(); updCnt();
-  const b=document.getElementById('ab_'+sku.replace(/[\s\/]/g,'_'));
-  if(b){b.textContent='+';b.classList.remove('added');}
-}
-function cartTot(){return Object.entries(cart).reduce(function(s,e){return s+e[1]*PRICE;},0);}
-function cartCnt(){return Object.keys(cart).length;}
-function updCnt(){
-  const n=cartCnt(),el=document.getElementById('cartCnt');
-  el.textContent=n; el.classList.toggle('show',n>0);
-  const b=document.getElementById('btnChk'); if(b)b.disabled=n===0;
-  const t=document.getElementById('cartTot'); if(t)t.textContent=n>0?'฿'+cartTot().toLocaleString():'—';
-}
-function renderCart(){
-  const el=document.getElementById('cartItems'); if(!el)return;
-  if(!cartCnt()){el.innerHTML='<p style="text-align:center;color:#9a9590;padding:20px 0;font-size:13px">ยังไม่มีสินค้าในตะกร้า</p>';return;}
-  el.innerHTML=Object.entries(cart).map(function(e){
-    const sku=e[0],qty=e[1];
-    return '<div class="cart-item">'+
-      '<div class="ci-sku">'+sku+'<small>'+(qty*PRICE).toLocaleString()+' บาท</small></div>'+
-      '<div class="qty-box">'+
-        '<button class="qty-btn" onclick="chgQty(''+sku+'',-50)">−</button>'+
-        '<input class="qty-inp" type="number" value="'+qty+'" min="1" onchange="setQty(''+sku+'',this.value)">'+
-        '<span class="qty-unit">หลา</span>'+
-      '</div>'+
-      '<button class="ci-del" onclick="remCart(''+sku+'')">🗑</button>'+
-    '</div>';
-  }).join('');
-  updCnt();
-}
-function updateCartUI(){renderCart();updCnt();}
-
-function openCart(){renderCart();document.getElementById('overlay').classList.add('open');document.getElementById('drawer').classList.add('open');}
-function closeCart(){document.getElementById('overlay').classList.remove('open');document.getElementById('drawer').classList.remove('open');}
-
-// ── CHECKOUT ──
-function openCheckout(){
-  closeCart();
-  document.getElementById('modal').classList.add('open');
-  showStep('step1'); buildSum();
-}
-function closeModal(){document.getElementById('modal').classList.remove('open');}
-function showStep(id){
-  ['step1','step2','successDiv'].forEach(function(s){
-    const el=document.getElementById(s); if(!el)return;
-    el.classList.remove('active','show');
-    if(s==='successDiv')el.style.display=''; 
-  });
-  const t=document.getElementById(id); if(!t)return;
-  if(id==='successDiv'){t.style.display='block';t.classList.add('show');}
-  else t.classList.add('active');
-}
-function buildSum(){
-  const box=document.getElementById('sumBox'); if(!box)return;
-  box.innerHTML=Object.entries(cart).map(function(e){
-    return '<div class="os-item"><span>'+e[0]+' × '+e[1]+' หลา</span><span>฿'+(e[1]*PRICE).toLocaleString()+'</span></div>';
-  }).join('')+'<div class="os-total"><span>รวม</span><span>฿'+cartTot().toLocaleString()+'</span></div>';
-}
-function goStep2(){
-  const store=document.getElementById('inpStore').value.trim();
-  const phone=document.getElementById('inpPhone').value.trim();
-  if(!store||!phone){alert('กรุณากรอกชื่อร้านและเบอร์โทร');return;}
-  document.getElementById('payAmt').textContent='฿'+cartTot().toLocaleString();
-  showStep('step2');
-}
-function goStep1(){showStep('step1');}
-function prevSlip(inp){
-  if(!inp.files||!inp.files[0])return;
-  const r=new FileReader();
-  r.onload=function(e){
-    const img=document.getElementById('slipPrev');
-    img.src=e.target.result; img.style.display='block';
-    document.querySelector('.slip-lbl').textContent='แนบสลิปแล้ว ✓';
-  };
-  r.readAsDataURL(inp.files[0]);
-}
-function submitOrder(){
-  const store=document.getElementById('inpStore').value.trim();
-  const phone=document.getElementById('inpPhone').value.trim();
-  const btn=document.getElementById('btnSub');
-  btn.disabled=true; btn.textContent='กำลังส่ง...';
-  const payload=JSON.stringify({
-    source:SOURCE, store:store, phone:phone,
-    note:document.getElementById('inpNote').value.trim(),
-    items:Object.entries(cart).map(function(e){return{sku:e[0],qty:e[1]}; }),
-    total:cartTot(),
-  });
-  fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:payload})
-  .then(function(){
-    document.getElementById('sucId').textContent='DKV11_'+Date.now().toString().slice(-6);
-    showStep('successDiv');
-  })
-  .catch(function(){
-    // no-cors always resolves — if we get here it's a real error
-    alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
-    btn.disabled=false; btn.textContent='✅ ยืนยันคำสั่งซื้อ';
-  });
-}
-function resetCart(){
-  cart={};
-  document.querySelectorAll('.add-btn').forEach(function(b){b.textContent='+';b.classList.remove('added');});
-  updCnt();
-}
-
-// ── INIT ──
-loadData(false);
 setInterval(function(){loadData(false);}, 5*60*1000);
 </script>
 </body>
